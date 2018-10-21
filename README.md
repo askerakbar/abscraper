@@ -1,0 +1,1 @@
+Bunch of scripts to scrap the product categories and protduct attributes from alibaba.com.
