@@ -6,6 +6,7 @@ const log = require('node-file-logger');
 const url = require('url');
 const options = require('./config.js');
 const util = require("util");
+var myArray = [];
 
 logOtptions = options.logOtptions;
 dbOptions = options.dbOptions;
@@ -39,12 +40,7 @@ class Database {
     }
 }
 
-let someRows, otherRows;
-
 database = new Database(dbOptions);
-var myArray = [];
-
-
 
 database.query('SELECT attribute_name,category_id, COUNT(*) FROM category_attributes GROUP BY attribute_name,category_id HAVING COUNT(*) > 1')
 .then(rows =>{
@@ -54,6 +50,8 @@ database.query('SELECT attribute_name,category_id, COUNT(*) FROM category_attrib
         
         database.query('SELECT * FROM category_attributes where attribute_name = ? AND category_id',[element.attribute_name])
         .then(function(results){
+
+            
             var concatAttrValue = '';
             results.forEach(resultVal => {
                 concatAttrValue = concatAttrValue+','+resultVal.attribute_value.trim();
@@ -73,12 +71,12 @@ database.query('SELECT attribute_name,category_id, COUNT(*) FROM category_attrib
             });
             
          
-        
+        /* 
 
             formatArray([{
                 attribute_name:currentAttrName,
                 attribute_value:JSON.stringify(arr)
-            }]);
+            }]); */
            // console.log(myArray);
             
             
@@ -115,3 +113,65 @@ var formatArray = function(val){
 
     
 }
+
+
+
+con.query('SELECT * FROM category_attributes where attribute_name = ? AND category_id = ?', [attrName,category_id], (error, results, fields) => {
+    if (error) {
+        throw error;
+    }
+    if(results.length > 0){
+        console.log("In 82 : "+attrName+":catid"+category_id);
+        // if exist then append the current value into it else insert new one
+        var newAttrValue = results[0].attribute_value+","+attrVal;
+        con.query("UPDATE `category_attributes` SET `attribute_value` = ?  WHERE `category_attribue_id` = ?",[newAttrValue,results[0].category_attribue_id], (error, results, fields) => {
+            if (error) {
+                throw error;
+            }
+        });
+    }else{
+        console.log("In 91");
+        con.query('INSERT INTO category_attributes SET ?', attrData, (error, results, fields) => {
+
+            if (error) {
+                throw error;
+            }
+        });
+    }
+});
+
+
+
+function insertAttr(data){
+    /* console.log(data.attribute_name);
+    console.log(data.category_id);
+    return; */
+        // check if category Id exist with the same attribute name
+        con.query('SELECT * FROM category_attributes where attribute_name = ? AND category_id = ?', [data.attribute_name,data.category_id], (error, results, fields) => {
+            if (error) {
+                throw error;
+            }
+            if(results.length > 0){
+                console.log(results.length);
+                console.log("exist");
+            //console.log(results[0].attribute_value);process.exit();
+                // if exist then append the current value into it else insert new one
+                var newAttrValue = results[0].attribute_value+" "+data.attribute_value;
+                con.query("UPDATE `category_attributes` SET `attribute_value` = ?  WHERE `category_attribue_id` = ?",[newAttrValue,results[0].category_attribue_id], (error, results, fields) => {
+                    if (error) {
+                        throw error;
+                    }
+                });
+            }else{
+               // return;
+               // console.log("yes not exist");
+                con.query('INSERT INTO category_attributes SET ?', data, (error, results, fields) => {
+                    if (error) {
+                        throw error;
+                    }
+                });
+            }
+        });
+    
+        //process.exit();
+    }

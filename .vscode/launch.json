@@ -1,0 +1,6 @@
+{
+    "type": "node",
+    "request": "launch",
+    "name": "Launch Program",
+    "program": "${workspaceRoot}/js/attr_crawler.js"
+}
