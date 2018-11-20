@@ -19,17 +19,20 @@ con.connect(err => {
         throw err;
     }else{
 
-        var category_id = 1114;
-
-        con.query('SELECT * FROM crawled_products WHERE category_id = ? AND has_crawled = 0', [category_id], (error, products, fields) => {
+        var category_id = 1057;
+        // category_id = ? AND 
+        //SELECT * FROM `crawled_products` WHERE `category_id` >= '1100' AND (`product_id` <= '1120'
+        //AND `category_id` >= 1100 AND category_id <= 1120 order by product_id asc  AND category_id = 1142
+        var query = 'SELECT * FROM crawled_products2 WHERE has_crawled = 0';
+        con.query(query, [], (error, products, fields) => {
             if (error) {
                 throw err;
             }else{
 
-                if(products.length < 1){return false;}
+                if(products.length < 1){console.log("No Products to Crawl");return false;}
 
                 products.forEach(function(result,index){
-
+                    category_id = result.category_id;
                     var productId = result.product_id;
                     var productUrl = result.url;
                     con.query('SELECT * FROM category_attributes WHERE product_id = ?', [productId], (error, catAttrRow, fields) => {
@@ -38,12 +41,22 @@ con.connect(err => {
                     }else{
                         
                         if(catAttrRow.length > 0){
-                            console.log("Product has been already crawled");
+                            console.log("Product has been already crawled ID:"+productId);
+                            con.query("UPDATE `crawled_products2` SET `has_crawled` = '1'  WHERE `product_id` = ?", productId, (error, results, fields) => {
+                                if (error) {
+                                    throw error;
+                                }
+                            });
                             return;
                         }
 
                         request(productUrl, function (error, response, productHtml) {
+
+                            try {
                             var $p = cheerio.load(productHtml);
+                            } catch (error) { 
+                                console.log(productUrl);
+                            }   
                             if($p('.do-overview').length){
                                 $p('dl.do-entry-item ').each(function(j, dEntryItem){
 
@@ -71,17 +84,18 @@ con.connect(err => {
                                             });
 
                                             var attrData = {
-                                                category_id:category_id,
+                                                category_id:result.category_id,
                                                 attribute_name: attrName,
                                                 attribute_value: attrVal,
-                                                product_id:productId
+                                                product_id:result.product_id
                                             };
-
+                                            //console.log(attrData);
+                                            log.Info(attrData);
                                             con.query('INSERT INTO category_attributes SET ?', attrData, (error, results, fields) => {
                                                 if (error) {
                                                     throw error;
                                                 }else{
-                                                    con.query("UPDATE `crawled_products` SET `has_crawled` = '1'  WHERE `product_id` = ?", productId, (error, results, fields) => {
+                                                    con.query("UPDATE `crawled_products2` SET `has_crawled` = '1'  WHERE `product_id` = ?", productId, (error, results, fields) => {
                                                         if (error) {
                                                             throw error;
                                                         }

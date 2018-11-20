@@ -5,8 +5,12 @@
   "main": "app.js",
   "dependencies": {
     "cheerio": "^1.0.0-rc.2",
+    "crawler": "^1.2.0",
     "mysql": "^2.16.0",
+    "nightmare": "^3.0.1",
     "node-file-logger": "^0.9.5",
+    "promise-mysql": "^3.3.1",
+    "proxy-lists": "^1.16.0",
     "request": "^2.88.0"
   },
   "devDependencies": {},

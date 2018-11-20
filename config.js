@@ -1,7 +1,8 @@
 exports.dbOptions = {
     user: 'root',
     password: 'root',
-    database: 'bidninja'
+    database: 'bidninja',
+    host: 'localhost'
 }
 exports.logOtptions = {
     folderPath: './logs/',
