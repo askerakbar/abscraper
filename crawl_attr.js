@@ -16,14 +16,29 @@ var c = new Crawler({
     rateLimit: 2000,
     callback: function (error, res, done) {
         if (error) {
-            //console.log(error);
+           console.log(error);
         } else {
             var $ = res.$;
-            
+            console.log("Crawling Product "+res.options.product_id);
+            if($('.m-detail-404').length){ console.log("404 Found");
+                if($('.m-detail-404').text().trim() == "This Product is no longer available."){
+                    con.query("UPDATE `crawled_products2` SET `has_crawled` = '1', has_attribute = '0' WHERE `product_id` = ?", res.options.product_id, (error, results, fields) => {
+                        if (error) {
+                            throw error;
+                        }
+                    });
+                    done();                    
+                }
+            }
             if($('.do-overview').length){
-                //console.log("12223");
+
+ 
+                var attrsLength = $('dl.do-entry-item dt.do-entry-item').length;
+
+
+                if(attrsLength > 0){
                 $('dl.do-entry-item ').each(function(j, dEntryItem){
-                   /// console.log("22222");
+                    
                     var attrName = $(dEntryItem).find('dt.do-entry-item').text().trim();
                     var attrVal = $(dEntryItem).find('dd.do-entry-item-val').text().trim();
 
@@ -33,12 +48,16 @@ var c = new Crawler({
                     attrVal  = attrVal.replace(':','');
                     
                     con.query('SELECT * FROM category_attributes2 WHERE category_id = ? AND attribute_name = ? AND attribute_value = ?', [res.options.parent_category_id,attrName,attrVal], (error, attrResults, fields) => {
-                        //console.log(attrResults.length);
+
                         if (error) {
-                            done();throw error;
+                            done();
+                            throw error;
                         }else{
-                           // console.log(res.options.category_id);return false;
-                            if(attrResults.length > 0){done();log.Info("No Attribue found for Product"+res.options.product_id);return;}
+                         
+                            if(attrResults.length > 0){
+                                log.Info("Attribute Name with Attribute Value already exist: SELECT * FROM category_attributes2 WHERE category_id = "+res.options.parent_category_id+" AND attribute_name = "+attrName+" AND attribute_value = "+attrVal);
+                                return;
+                            }
 
                             attrResults.forEach(function(attrResultRow,index){
                                 if(attrResultRow.attribute_value == attrVal){
@@ -58,20 +77,45 @@ var c = new Crawler({
                                 if (error) {
                                     done();throw error;
                                 }else{
-                                    
                                     log.Info(attrData);
-                                    con.query("UPDATE `crawled_products2` SET `has_crawled` = '1'  WHERE `product_id` = ?", res.options.product_id, (error, results, fields) => {
-                                        if (error) {
-                                            throw error;
-                                        }
-                                    });
                                     done();
                                 }
                             });
                         }
-                    });   
+                    });  
+                    
+                    if(attrsLength == j+1){
+                       
+                        con.query("UPDATE `crawled_products2` SET `has_crawled` = '1'  WHERE `product_id` = ?", res.options.product_id, (error, results, fields) => {
+                            if (error) {
+                                //console.log("Error");
+                                throw error;
+                            }else{
+                                //console.log("done");
+                                done();
+                            }
+                        });
+                    }
+
                 });
+                }else{
+                    console.log("Found no Attributes");
+                    con.query("UPDATE `crawled_products2` SET `has_crawled` = '1', has_attribute = '0' WHERE `product_id` = ?", res.options.product_id, (error, results, fields) => {
+                        if (error) {
+                            throw error;
+                        }
+                    });
+                    done();
+                }
             }else{
+                // no attributes found
+                console.log("Not found");
+                log.Info("No Attribue found for Product "+res.options.product_id);
+                con.query("UPDATE `crawled_products2` SET `has_crawled` = '1', has_attribute = '0' WHERE `product_id` = ?", res.options.product_id, (error, results, fields) => {
+                    if (error) {
+                        throw error;
+                    }
+                });
                 done();
             }
 
@@ -94,8 +138,10 @@ con.connect(err => {
     if (err) {
         throw err;
     } else {
+
         var category_id = 0;    
-        var query = 'SELECT * FROM crawled_products2 WHERE has_crawled = 0 order by product_id asc limit 1000 offset 6000';
+        var query = 'SELECT * FROM crawled_products2 WHERE has_crawled = 0 order by product_id desc limit 1000';
+
         con.query(query, [category_id], (error, products, fields) => {
             if (error) {
                 throw err;
@@ -104,7 +150,7 @@ con.connect(err => {
                 if(products.length < 1){console.log("No Products to Crawl");return false;}
                 products.forEach(function(result,index){
                     
-                   // category_id = result.category_id;
+                   
                     var productId = result.product_id;
                     var productUrl = result.url;
                     productUrl = url.resolve(siteUrl, productUrl);
@@ -123,12 +169,14 @@ con.connect(err => {
                                 }); 
                                 return;
                             }else{
-                             /* console.log({
+
+                               console.log({
                                     uri: productUrl,
                                     parent_category_id: result.category_id,
                                     product_id: productId
-                                }); */
-                                    c.queue({
+                                }); 
+
+                                c.queue({
                                     uri: productUrl,
                                     parent_category_id:  result.category_id,
                                     product_id: productId
@@ -138,7 +186,7 @@ con.connect(err => {
                        
                         }
                     });
-                   // return false;
+                   
                 });
             }
         });
@@ -146,16 +194,9 @@ con.connect(err => {
     }
 });
 
-c.on('schedule',function(options){
-   // options.proxy = 'http://84.52.88.125:32666';
-  //  options.proxy = "http://93.78.206.59:54199";
-    //options.proxy = "http://185.129.2.227:32938";
-    //options.proxy = "http://200.119.243.219:58241";
-   // options.proxy = 'http://110.74.199.205:55699';
 
-   // options.proxy = 'socks4://168.228.184.116:4145';
-   options.proxy = "http://212.72.159.22:30323";
-    
+c.on('schedule',function(options){
+    options.proxy = "";
 }); 
 
 

@@ -27,9 +27,7 @@ var c = new Crawler({
 
             var cat_name = $('.m-gallery-product-filter-breadcrumb.checked a').text().trim();
 
-            //console.log(res.options.uri+"::"+cat_name+"::"+res.options.parent_category_id);
-            //console.log("select count(*) from categories2 where category_id = "+res.options.parent_category_id);
-            //console.log(cat_name);
+   
             con.query('select count(*) as count from categories2 where category_id = ?', [res.options.parent_category_id], (error, results, fields) => {
 
                 if (error) {
@@ -100,7 +98,7 @@ con.connect(err => {
     if (err) {
         throw err;
     } else {
-        //category_id = 2031 order by category_id asc
+        
         con.query('SELECT * FROM `categories2` where parent_category_id = 1050', [], (error, products, fields) => {
             if (error) {
                 log.Error("Error3");
@@ -130,7 +128,7 @@ con.connect(err => {
 });
 
 c.on('schedule',function(options){
-    options.proxy = "http://103.194.192.42:34077";
+    options.proxy = "";
 });
 
 

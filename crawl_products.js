@@ -95,9 +95,7 @@ var c = new Crawler({
 });
 
 c.on('schedule',function(options){
-   // options.proxy = "http://103.230.62.194:53074";
-    //  "curl": "http://109.120.237.13:46868",
-
+   // options.proxy = "";
 });
 
 con.connect(err => {
