@@ -1,3 +1,3 @@
 # abscraper
 
-NodeJS scripts to scrap Alibaba Item Attributes
+Bunch of scripts to scrap Alibaba Item Attributes
